@@ -22,6 +22,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@sveltestrap/sveltestrap": "^6.2.7"
+		"@sveltestrap/sveltestrap": "^6.2.7",
+		"mdb-ui-kit": "^7.2.0"
 	}
 }
