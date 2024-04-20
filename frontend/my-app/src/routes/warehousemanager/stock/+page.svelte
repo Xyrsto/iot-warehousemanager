@@ -66,9 +66,11 @@
             <div class="col">Qtd.: 5</div>
             <div class="col d-flex justify-content-end ">
                 <div class="row">
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div class="col me-1 rounded-3 productButton" on:click={publishLed}><i class="fa-solid fa-magnifying-glass"></i></div>
                     <div class="col ms-1 rounded-3 productButton"><i class="fa-solid fa-pencil"></i></div>
-                </div>
+                </div>  
             </div>
         </div>
 
@@ -79,6 +81,8 @@
                     <div class="col">Qtd.: 5</div>
                 </div>
                 <div class="row">
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div class="col me-1 rounded-3 productButton" on:click={publishLed}><i class="fa-solid fa-magnifying-glass"></i></div>
                     <div class="col ms-1 rounded-3 productButton"><i class="fa-solid fa-pencil"></i></div>
                 </div>
