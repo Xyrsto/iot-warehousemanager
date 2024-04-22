@@ -1,19 +1,20 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import dotenv from "dotenv";
     import mqtt from "mqtt";
-
+    dotenv.config();
     let temp: string = "";
     let clientId = "client" + Math.random() * 10000;
     let led = false;
-
+    let productStock = [];
     const url = "ws://192.168.1.237:9001";
     const API_URL = "http://localhost:3000/getStock";
-    let productStock = [];
+
     const options = {
-        connectTimeout: 4000,
+        connectTimeout: process.env.MQTT_CONNTIMEOUT,
         clientId: clientId,
-        username: "ruby2",
-        password: "aluno23885",
+        username: process.env.MQTT_USERNAME,
+        password: process.env.MQTT_PASSWORD,
     };
 
     const client = mqtt.connect(url, options);
@@ -53,8 +54,8 @@
         const data = await response.json();
         productStock = data;
         productStock.forEach((product) => {
-            console.log(product.productName)
-        })
+            console.log(product.productName);
+        });
     }
 
     onMount(() => {
