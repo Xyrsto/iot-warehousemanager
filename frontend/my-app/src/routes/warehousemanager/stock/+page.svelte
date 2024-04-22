@@ -52,7 +52,9 @@
         });
         const data = await response.json();
         productStock = data;
-        console.log(productStock)
+        productStock.forEach((product) => {
+            console.log(product.productName)
+        })
     }
 
     onMount(() => {
