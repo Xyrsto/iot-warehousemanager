@@ -7,39 +7,35 @@
     let clientId = "client" + Math.random() * 10000;
     let led = false;
     let productStock = [];
-    const url = "ws://192.168.1.237:9001";
-    const API_URL = "http://localhost:3000/getStock";
 
+    const MQTT_URL: string = process.env.MQTT_URL!;
+    const API_URL = "http://localhost:3000/getStock";
     const options = {
-        connectTimeout: process.env.MQTT_CONNTIMEOUT,
+        connectTimeout: 4000,
         clientId: clientId,
         username: process.env.MQTT_USERNAME,
         password: process.env.MQTT_PASSWORD,
     };
 
-    const client = mqtt.connect(url, options);
-
+    const client = mqtt.connect(MQTT_URL, options);
     client.on("connect", () => {
         console.log("Connected to MQTT broker");
         client.subscribe("test");
     });
-
+    
     client.on("message", (topic, message) => {
         console.log(
             "Message received on topic " + topic + ": " + message.toString(),
         );
-        temp = message.toString(); // Update the value of the writable store
+        temp = message.toString();
     });
 
-    client.on("error", (error) => {
-        console.error("MQTT error:", error);
-    });
+    client.on("error", (error) => console.error("MQTT error:", error));
 
     function publishLed() {
         let msg;
         led ? (msg = "on") : (msg = "off");
         led = !led;
-
         client.publish("led", msg);
     }
 
@@ -53,12 +49,10 @@
         });
         const data = await response.json();
         productStock = data;
-        productStock.forEach((product) => {
-            console.log(product.productName);
-        });
+        productStock.forEach((product: { productName: any }) => console.log(product.productName))
     }
 
-    onMount(() => {
+    onMount(async () => {
         fetchData();
     });
 </script>
