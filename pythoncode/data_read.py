@@ -8,7 +8,7 @@ def extract_first_4_bytes(data):
 
     # Convert the extracted bytes to a string of hexadecimal representation
     first_4_bytes_str = ''.join(['{:02x}'.format(byte) for byte in first_4_bytes_hex])
-
+    
     return first_4_bytes_str[0:8]
 
 def read_rfid_card():

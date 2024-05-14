@@ -5,6 +5,8 @@
     let productStock: any[] = [];
 
     const API_URL = "http://localhost:3000/getInventory";
+    const WRITE_URL = "http://localhost:3000/write"
+    const DELETE_URL = "http://localhost:3000/delete"
 
     async function fetchData() {
         const response = await fetch(API_URL, {
@@ -17,6 +19,18 @@
         const data = await response.json();
         productStock = data;
         getCategories();
+    }
+
+    async function writeData() {
+        const response = await fetch(WRITE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+        });
+        const data = await response.json();
+        //console.log(data);
     }
 
     function getCategories() {
@@ -41,13 +55,19 @@
                 return { ...category, visible: !category.visible };
             }
             return category;
-        });
-
-        console.log(categories);
-        
+        });        
     }
 
-    onMount(async () => {});
+    onMount(async () => {
+        const response = await fetch(DELETE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+        });
+        const data = await response.json();
+    });
 </script>
 
 <svelte:head>

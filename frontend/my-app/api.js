@@ -26,20 +26,21 @@ mongoose
     .catch((err) => {
         console.error("Error connecting to database:", err);
     });
-/*
+
 // MQTT Connection
 import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "mqtt://192.168.189.218";
+const MQTT_URL = "tcp://7.tcp.eu.ngrok.io:14443";
 const options = {
     connectTimeout: 4000,
-    username: "ruby",
-    password: "aluno23885",
+    username: "xyrsto",
+    password: "olamundo",
 };
 
 const client = mqtt.connect(MQTT_URL, options);
 client.on("connect", () => {
     console.log("Connected to MQTT broker");
+    client.publish(topic, "finished");
     client.subscribe(topic);
 });
 
@@ -52,7 +53,47 @@ let itemId;
 
 client.on("message", async (topicName, message) => {
     let msg = message.toString();
-    if (msg.includes("++")) {
+    if (msg.includes("remove")) {
+        itemId = msg.substring(9, msg.length + 1);
+        try {
+            const products = await Product.aggregate([
+                {
+                    $addFields: {
+                        productIdStr: { $toString: "$productId" }, // Convert productId to string
+                    },
+                },
+                {
+                    $match: {
+                        productIdStr: { $regex: `^${itemId}` }, // Match the prefix
+                    },
+                },
+            ]);
+
+            if (products.length == 1) {
+                try {
+                    categoryId = products[0].categoryId.toString();
+                    const category = await Category.findOne({
+                        categoryId: categoryId,
+                    });
+
+                    if (category.categoryStock > 0) {
+                        category.categoryStock -= 1;
+                        await category.save();
+                    }
+
+                    Product.deleteOne({
+                        productId: products[0].productId,
+                    }).exec();
+                } catch (error) {
+                    console.log(error);
+                }
+            } else {
+                console.log("No products found with the given prefix.");
+            }
+        } catch (error) {
+            console.error("Error finding products:", error);
+        }
+    } else if (msg.includes("++")) {
         categoryId = msg.substring(0, 8);
         itemId = msg.substring(10, msg.length + 1);
 
@@ -61,7 +102,7 @@ client.on("message", async (topicName, message) => {
                 categoryId: categoryId,
             });
 
-            console.log(category);
+            //console.log(category);
 
             if (category) {
                 category.categoryStock += 1;
@@ -78,16 +119,19 @@ client.on("message", async (topicName, message) => {
             console.log(error);
         }
     }
-});*/
+});
 
 app.post("/getInventory", async (req, res) => {
     try {
         let listagem = {};
         const products = await Product.find();
 
-        for(const product of products){
-            const category = await Category.findOne({ categoryId: product.categoryId});
-            listagem[product.productId] = category.categoryName+"+"+category.categoryStock
+        for (const product of products) {
+            const category = await Category.findOne({
+                categoryId: product.categoryId,
+            });
+            listagem[product.productId] =
+                category.categoryName + "+" + category.categoryStock;
         }
 
         res.status(200).json(listagem);
@@ -96,7 +140,6 @@ app.post("/getInventory", async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
-
 
 app.post("/write", async (req, res) => {
     let rnd = Math.floor(Math.random() * 99999999);
