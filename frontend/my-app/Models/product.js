@@ -2,18 +2,12 @@ import mongoose from 'mongoose';
 
 const productSchema = mongoose.Schema(
     {
-        productName:{
-            type: String,
-            required: [true, "Introduza um nome válido"]
-        },
-        quantity:{
+        productId:{
             type: Number, 
-            required: [true, "Introduza uma quantidade"]
         },
-        location:{
+        categoryId:{
             type: String,
-            required: [true, "Introduza uma localização"]
-        }
+        }     
     },
     {
         timestamps: true

@@ -1,43 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import dotenv from "dotenv";
-    import mqtt from "mqtt";
-    dotenv.config();
-    let temp: string = "";
-    let clientId = "client" + Math.random() * 10000;
-    let led = false;
     let productStock = [];
 
-    const MQTT_URL: string = process.env.MQTT_URL!;
-    const API_URL = "http://localhost:3000/getStock";
-    const options = {
-        connectTimeout: 4000,
-        clientId: clientId,
-        username: process.env.MQTT_USERNAME,
-        password: process.env.MQTT_PASSWORD,
-    };
-
-    const client = mqtt.connect(MQTT_URL, options);
-    client.on("connect", () => {
-        console.log("Connected to MQTT broker");
-        client.subscribe("test");
-    });
-    
-    client.on("message", (topic, message) => {
-        console.log(
-            "Message received on topic " + topic + ": " + message.toString(),
-        );
-        temp = message.toString();
-    });
-
-    client.on("error", (error) => console.error("MQTT error:", error));
-
-    function publishLed() {
-        let msg;
-        led ? (msg = "on") : (msg = "off");
-        led = !led;
-        client.publish("led", msg);
-    }
+    const API_URL = "http://localhost:3000/getStock"
 
     async function fetchData() {
         const response = await fetch(API_URL, {
@@ -54,6 +19,14 @@
 
     onMount(async () => {
         fetchData();
+
+        const response = await fetch("http://localhost:3000/delete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+        });
     });
 </script>
 
@@ -79,12 +52,6 @@
         <div class="col">b</div>
         <div class="col">c</div>
     </div>
-    <div
-        class="row w-100 text-center p-2 m-0"
-        style="color: var(--color-primary-600)"
-    >
-        <strong>Temperature:</strong> <span>{temp}</span>
-    </div>
 
     <div class="col mt-2" style="color: var(--color-primary-600);">
         <div
@@ -99,7 +66,7 @@
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
                         class="col me-1 rounded-3 productButton"
-                        on:click={publishLed}
+                        
                     >
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
@@ -124,7 +91,7 @@
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
                     <div
                         class="col me-1 rounded-3 productButton"
-                        on:click={publishLed}
+                        
                     >
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
