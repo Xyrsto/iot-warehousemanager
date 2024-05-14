@@ -1,8 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    let productStock = [];
+    let categories: { categoryName: string; visible: boolean }[] = [];
+    let products: any[] = [];
+    let productStock: any[] = [];
 
-    const API_URL = "http://localhost:3000/getStock"
+    const API_URL = "http://localhost:3000/getInventory";
 
     async function fetchData() {
         const response = await fetch(API_URL, {
@@ -14,20 +16,38 @@
         });
         const data = await response.json();
         productStock = data;
-        productStock.forEach((product: { productName: any }) => console.log(product.productName))
+        getCategories();
     }
 
-    onMount(async () => {
-        fetchData();
+    function getCategories() {
+        for (const productId in productStock) {
+            if (Object.hasOwnProperty.call(productStock, productId)) {
+                const categoryName = productStock[productId];
+                products.push(productId + "+" + categoryName);
 
-        const response = await fetch("http://localhost:3000/delete", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
+                if (!categories.includes(categoryName)) {
+                    categories.push({
+                        categoryName: categoryName,
+                        visible: false,
+                    });
+                }
+            }
+        }
+    }
+
+    function toggleVisibility(categoryName: string): void {
+        categories = categories.map((category) => {
+            if (category.categoryName === categoryName) {
+                return { ...category, visible: !category.visible };
+            }
+            return category;
         });
-    });
+
+        console.log(categories);
+        
+    }
+
+    onMount(async () => {});
 </script>
 
 <svelte:head>
@@ -53,54 +73,73 @@
         <div class="col">c</div>
     </div>
 
-    <div class="col mt-2" style="color: var(--color-primary-600);">
-        <div
-            class="row p-2 mx-5 rounded-3 text-center d-flex align-items-center productListing largerScreen"
-            style="background-color: var(--color-surface-mixed-200)"
-        >
-            <div class="col">Nome Produto</div>
-            <div class="col">Qtd.: 5</div>
-            <div class="col d-flex justify-content-end">
-                <div class="row">
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="col mt-3" style="color: var(--color-primary-600);">
+        {#await fetchData() then}
+            {#each categories as category}
+                <div class="mb-3">
                     <div
-                        class="col me-1 rounded-3 productButton"
-                        
+                        class="row p-2 mx-5 rounded-top-3 text-center d-flex align-items-center categoryListing"
+                        style="background-color: var(--color-primary-500); color: var(--color-surface-mixed-200); font-weight: bold"
                     >
-                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <div class="col">{category.categoryName.substring(0,category.categoryName.indexOf("+"))}</div>
+                        <div class="col">Stock: {category.categoryName.substring(category.categoryName.indexOf("+")+1,category.categoryName.length)}</div>
+                        <div class="col d-flex justify-content-end">
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <div class="row">
+                                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                <div
+                                    class="col rounded-3 dropdownButton"
+                                    on:click={() =>
+                                        toggleVisibility(category.categoryName)}
+                                >
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col ms-1 rounded-3 productButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div
-            class="row p-1 py-2 mx-5 rounded-3 text-center d-flex align-items-center productListing smallerScreen"
-            style="background-color: var(--color-surface-mixed-200)"
-        >
-            <div class="col">
-                <div class="row mb-3">
-                    <div class="col">Nome produto</div>
-                    <div class="col">Qtd.: 5</div>
-                </div>
-                <div class="row">
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div
-                        class="col me-1 rounded-3 productButton"
+                    {#if category.visible}
                         
-                    >
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </div>
-                    <div class="col ms-1 rounded-3 productButton">
-                        <i class="fa-solid fa-pencil"></i>
-                    </div>
+                        <div class="products">
+                            {#each products as product}
+                                {#if product.includes(category.categoryName)}
+                                    <div
+                                        class="row p-2 mx-5 text-center d-flex align-items-center productListing"
+                                        style="background-color: var(--color-surface-mixed-200)"
+                                    >
+                                        <div class="col">
+                                            {product.substring(0, 8)}
+                                        </div>
+                                        <div
+                                            class="col d-flex justify-content-end"
+                                        >
+                                            <div class="row">
+                                                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                                <div
+                                                    class="col me-1 rounded-3 productButton"
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-magnifying-glass"
+                                                    ></i>
+                                                </div>
+                                                <div
+                                                    class="col ms-1 rounded-3 productButton"
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-pencil"
+                                                    ></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {/if}
+                            {/each}
+                        </div>
+                    {/if}
                 </div>
-            </div>
-        </div>
+            {/each}
+        {/await}
     </div>
 </div>
 
@@ -149,6 +188,18 @@
         color: var(--color-primary-500);
     }
 
+    .dropdownButton {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+    }
+
+    .dropdownButton:hover {
+        cursor: pointer;
+        background-color: var(--color-surface-mixed-100);
+        color: var(--color-surface-mixed-600);
+    }
+
     .productButton {
         width: 40px;
         height: 40px;
@@ -161,25 +212,5 @@
         cursor: pointer;
         background-color: var(--color-surface-mixed-100);
         color: var(--color-surface-mixed-600);
-    }
-
-    @media (max-width: 769px) {
-        .largerScreen {
-            display: none !important;
-        }
-
-        .smallerScreen {
-            display: flex !important;
-        }
-    }
-
-    @media (min-width: 768px) {
-        .largerScreen {
-            display: flex !important;
-        }
-
-        .smallerScreen {
-            display: none !important;
-        }
     }
 </style>

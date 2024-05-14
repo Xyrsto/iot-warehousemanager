@@ -26,7 +26,7 @@ mongoose
     .catch((err) => {
         console.error("Error connecting to database:", err);
     });
-
+/*
 // MQTT Connection
 import mqtt from "mqtt";
 let topic = "warehouse";
@@ -78,17 +78,25 @@ client.on("message", async (topicName, message) => {
             console.log(error);
         }
     }
-});
+});*/
 
-app.post("/getStock", async (req, res) => {
+app.post("/getInventory", async (req, res) => {
     try {
+        let listagem = {};
         const products = await Product.find();
-        res.status(200).json(products);
+
+        for(const product of products){
+            const category = await Category.findOne({ categoryId: product.categoryId});
+            listagem[product.productId] = category.categoryName+"+"+category.categoryStock
+        }
+
+        res.status(200).json(listagem);
     } catch (err) {
         console.error("Error retrieving products:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 app.post("/write", async (req, res) => {
     let rnd = Math.floor(Math.random() * 99999999);
