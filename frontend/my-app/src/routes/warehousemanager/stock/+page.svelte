@@ -59,7 +59,7 @@
     }
 
     onMount(async () => {
-        const response = await fetch(DELETE_URL, {
+        const response = await fetch(WRITE_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

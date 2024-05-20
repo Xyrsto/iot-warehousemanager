@@ -30,7 +30,7 @@ mongoose
 // MQTT Connection
 import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "tcp://7.tcp.eu.ngrok.io:14443";
+const MQTT_URL = "tcp://0.tcp.eu.ngrok.io:11593";
 const options = {
     connectTimeout: 4000,
     username: "xyrsto",

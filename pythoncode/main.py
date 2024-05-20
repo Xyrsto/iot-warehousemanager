@@ -14,6 +14,8 @@ from pico_i2c_lcd import I2cLcd
 from data_read import read_rfid_card
 from data_write import write_rfid_card
 
+import wifimgr
+
 
 # Initialize the I2C interface
 i2c = I2C(0, sda=Pin(0), scl=Pin(1), freq=400000)
@@ -45,23 +47,24 @@ def write_to_lcd(dataStr):
         
     writtenData = dataStr
 
-led_pin.off()
-wlan = network.WLAN(network.STA_IF)
-wlan.active(True)
-wlan.connect("tudobem", "estatudobem")
-#wlan.connect("CASATANCOS", "8N2151H4A0A")
-time.sleep(5)
-print(wlan.isconnected())
-print('IP: ', wlan.ifconfig()[0])
+wlan = wifimgr.get_connection()
 
-mqtt_server = '192.168.189.218'
+if wlan is None:
+    print("Não foi possível iniciar a ligação")
+    while True:
+        pass
+    
+print("OK")
+print (wlan)
+
+mqtt_server = '0.tcp.eu.ngrok.io'
 client_id = 'teste'
 topic_pub = b'warehouse'
 topic_msg = str(ReadTemperature())
 cb = ""
 
 def mqtt_connect():
-    client = MQTTClient(client_id, mqtt_server, 1883, user="ruby", password="aluno23885", keepalive=3600)
+    client = MQTTClient(client_id, mqtt_server, 11593, user="xyrsto", password="olamundo", keepalive=3600)
     client.set_last_will(topic="test", msg="Desconectado", retain=True, qos=2)
     client.set_callback(mqtt_callback)
     
@@ -98,8 +101,9 @@ def mqtt_callback(topic, msg):
         client.publish(topic_pub, str(product_id) + "+" + str(item_id).replace("'", "").replace("b",""), retain=True)
                    
     if("delete" in msg.decode("utf-8")):
-        write_to_lcd("Waiting to read")
-        write_to_lcd(read_rfid_card())
+        write_to_lcd("Read item card")
+        item_id = read_rfid_card()
+        client.publish(topic_pub, "remove" + "++" + str(item_id))
         
     
     
