@@ -1,19 +1,33 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { page } from "$app/stores";
     let categories: { categoryName: string; visible: boolean }[] = [];
+    let createCategories: Object[] = [];
     let products: any[] = [];
     let productStock: any[] = [];
 
     const API_URL = "http://localhost:3000/getInventory";
-    const WRITE_URL = "http://localhost:3000/write"
-    const DELETE_URL = "http://localhost:3000/delete"
+    const WRITE_URL = "http://localhost:3000/write";
+    const DELETE_URL = "http://localhost:3000/delete";
+
+    let jwtToken: string;
+
+    // Page Index
+    let pageIndex = $page.url.searchParams.get("page");
+
+    // Add product
+    let selectedCategory: number | null = null;
+    let productName: string = "";
 
     async function fetchData() {
+        jwtToken = localStorage.getItem("jwtToken");
+
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
             },
         });
         const data = await response.json();
@@ -27,17 +41,41 @@
             headers: {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({
+                productName: productName,
+                categoryId: selectedCategory,
+            }),
+        });
+        const data = await response.json();
+        window.alert(data.message);
+    }
+
+    async function fetchCategories() {
+        jwtToken = localStorage.getItem("jwtToken");
+        const response = await fetch("http://localhost:3000/getCategories", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
             },
         });
         const data = await response.json();
-        //console.log(data);
+        createCategories = data;
+        console.log(createCategories[1]);
     }
 
+    let uniqueCategoriesList: Object[] = [];
     function getCategories() {
+        fetchCategories();
+        categories = [];
         for (const productId in productStock) {
             if (Object.hasOwnProperty.call(productStock, productId)) {
                 const categoryName = productStock[productId];
-                products.push(productId + "+" + categoryName);
+
+                products.push(productId + "+" + categoryName + "");
 
                 if (!categories.includes(categoryName)) {
                     categories.push({
@@ -47,27 +85,40 @@
                 }
             }
         }
+
+        // Create an object to store unique category names as keys
+        let uniqueCategories: Object[] = [];
+
+        // Filter out duplicate entries
+        uniqueCategoriesList = categories.filter((category) => {
+            if (!uniqueCategories[category.categoryName]) {
+                uniqueCategories[category.categoryName] = true;
+                return true;
+            }
+            return false;
+        });
     }
 
     function toggleVisibility(categoryName: string): void {
-        categories = categories.map((category) => {
+        uniqueCategoriesList = uniqueCategoriesList.map((category) => {
             if (category.categoryName === categoryName) {
                 return { ...category, visible: !category.visible };
             }
             return category;
-        });        
+        });
     }
 
-    onMount(async () => {
-        const response = await fetch(WRITE_URL, {
+    async function fetchDelete() {
+        jwtToken = localStorage.getItem("jwtToken");
+        const response = await fetch(DELETE_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
             },
         });
-        const data = await response.json();
-    });
+    }
 </script>
 
 <svelte:head>
@@ -88,79 +139,157 @@
 
 <div class="main">
     <div class="navbar row text-center py-3">
-        <div class="col"><i class="fa-solid fa-boxes-stacked"></i></div>
-        <div class="col">b</div>
-        <div class="col">c</div>
+        <div
+            class="col"
+            role="button"
+            on:click={() => {
+                pageIndex = 0;
+            }}
+        >
+            <i class="fa-solid fa-boxes-stacked"></i>
+        </div>
+        <div
+            class="col"
+            role="button"
+            on:click={() => {
+                pageIndex = 1;
+            }}
+        >
+            <i class="fa-solid fa-square-plus"></i>
+        </div>
+        <div
+            class="col"
+            role="button"
+            on:click={() => {
+                fetchDelete();
+            }}
+        >
+            <i class="fa-solid fa-square-minus"></i>
+        </div>
     </div>
 
-    <div class="col mt-3" style="color: var(--color-primary-600);">
-        {#await fetchData() then}
-            {#each categories as category}
-                <div class="mb-3">
-                    <div
-                        class="row p-2 mx-5 rounded-top-3 text-center d-flex align-items-center categoryListing"
-                        style="background-color: var(--color-primary-500); color: var(--color-surface-mixed-200); font-weight: bold"
-                    >
-                        <div class="col">{category.categoryName.substring(0,category.categoryName.indexOf("+"))}</div>
-                        <div class="col">Stock: {category.categoryName.substring(category.categoryName.indexOf("+")+1,category.categoryName.length)}</div>
-                        <div class="col d-flex justify-content-end">
-                            <!-- svelte-ignore a11y-no-static-element-interactions -->
-                            <div class="row">
-                                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                <div
-                                    class="col rounded-3 dropdownButton"
-                                    on:click={() =>
-                                        toggleVisibility(category.categoryName)}
-                                >
-                                    <i class="fa-solid fa-chevron-down"></i>
+    {#if pageIndex == 0}
+        <div class="col mt-3" style="color: var(--color-primary-600);">
+            {#await fetchData() then}
+                {#each uniqueCategoriesList as category}
+                    <div class="mb-3">
+                        <div
+                            class="row p-2 mx-5 rounded-top-3 text-center d-flex align-items-center categoryListing"
+                            style="background-color: var(--color-primary-500); color: var(--color-surface-mixed-200); font-weight: bold"
+                        >
+                            <div class="col">
+                                {category.categoryName.substring(
+                                    0,
+                                    category.categoryName.indexOf("+"),
+                                )}
+                            </div>
+                            <div class="col">
+                                Stock: {category.categoryName.substring(
+                                    category.categoryName.indexOf("+") + 1,
+                                    category.categoryName.length,
+                                )}
+                            </div>
+                            <div class="col d-flex justify-content-end">
+                                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                                <div class="row">
+                                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                                    <div
+                                        class="col rounded-3 dropdownButton"
+                                        on:click={() =>
+                                            toggleVisibility(
+                                                category.categoryName,
+                                            )}
+                                    >
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {#if category.visible}
-                        
-                        <div class="products">
-                            {#each products as product}
-                                {#if product.includes(category.categoryName)}
-                                    <div
-                                        class="row p-2 mx-5 text-center d-flex align-items-center productListing"
-                                        style="background-color: var(--color-surface-mixed-200)"
-                                    >
-                                        <div class="col">
-                                            {product.substring(0, 8)}
-                                        </div>
+                        {#if category.visible}
+                            <div class="products">
+                                {#each products as product}
+                                    {#if product.includes(category.categoryName)}
                                         <div
-                                            class="col d-flex justify-content-end"
+                                            class="row p-2 mx-5 text-center d-flex align-items-center productListing"
+                                            style="background-color: var(--color-surface-mixed-200)"
                                         >
-                                            <div class="row">
-                                                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                                                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                                                <div
-                                                    class="col me-1 rounded-3 productButton"
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-magnifying-glass"
-                                                    ></i>
-                                                </div>
-                                                <div
-                                                    class="col ms-1 rounded-3 productButton"
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-pencil"
-                                                    ></i>
-                                                </div>
+                                            <div class="col d-flex justify-content-center">
+                                                {product.substring(0, 8)}
                                             </div>
+
+                                            <div class="col d-flex justify-content-center">
+                                                {#each createCategories[1] as prod}
+                                                    {#if prod.productId == product.substring(0, 8)}
+                                                        {prod.productName}
+                                                    {/if}
+                                                {/each}
+                                            </div>
+
+                                            <div class="col d-flex"></div>
                                         </div>
-                                    </div>
-                                {/if}
-                            {/each}
-                        </div>
-                    {/if}
+                                    {/if}
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            {/await}
+        </div>
+    {/if}
+
+    {#if pageIndex == 1}
+        {#await fetchCategories() then}
+            <div class="col mt-3" style="color: var(--color-primary-600);">
+                <div class="row justify-content-center">
+                    <div class="col-6">
+                        <form on:submit|preventDefault={writeData}>
+                            <div class="mb-3">
+                                <label for="productName" class="form-label"
+                                    >Nome do produto</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="productName"
+                                    bind:value={productName}
+                                    required
+                                />
+                            </div>
+                            <div class="mb-3">
+                                <label for="category" class="form-label"
+                                    >Categoria</label
+                                >
+                                <select
+                                    id="category"
+                                    class="form-select"
+                                    bind:value={selectedCategory}
+                                    required
+                                >
+                                    <option value="" disabled selected
+                                        >Selecione uma categoria</option
+                                    >
+                                    {#each createCategories as category}
+                                        <option value={category.categoryId}
+                                            >{category.categoryName}</option
+                                        >
+                                    {/each}
+                                </select>
+                            </div>
+                            <div class="text-center">
+                                <button
+                                    type="submit"
+                                    class="btn btn-dark btn-rounded"
+                                    style="background-color: var(--color-primary-200)"
+                                    >Adicionar</button
+                                >
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            {/each}
+            </div>
         {/await}
-    </div>
+    {/if}
 </div>
 
 <style>

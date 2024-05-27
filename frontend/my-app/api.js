@@ -33,11 +33,11 @@ mongoose
 
 import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "tcp://6.tcp.eu.ngrok.io:19212";
+const MQTT_URL = "ws://192.168.1.81:9001";
 const options = {
     connectTimeout: 4000,
-    username: "xyrsto",
-    password: "olamundo",
+    username: "Ruby",
+    password: "aluno23885",
 };
 
 const client = mqtt.connect(MQTT_URL, options);
@@ -96,29 +96,6 @@ client.on("message", async (topicName, message) => {
         } catch (error) {
             console.error("Error finding products:", error);
         }
-    } else if (msg.includes("++")) {
-        categoryId = msg.substring(0, 8);
-        itemId = msg.substring(10, msg.length + 1);
-
-        try {
-            const category = await Category.findOne({
-                categoryId: categoryId,
-            });
-
-            if (category) {
-                category.categoryStock += 1;
-                await category.save();
-            }
-
-            let product = new Product({
-                productId: itemId,
-                categoryId: categoryId,
-            });
-            await product.save();
-            client.publish(topic, "finished");
-        } catch (error) {
-            console.log(error);
-        }
     }
 });
 
@@ -165,10 +142,48 @@ app.post("/getInventory", verifyToken, async (req, res) => {
     }
 });
 
+app.post("/getCategories", verifyToken, async (req, res) => {
+try {
+    const categories = await Category.find();
+    const products = await Product.find();
+
+    let response = []
+    response.push(categories);
+    response.push(products)
+    res.status(200).json(response)
+} catch (error) {
+    console.error("Error retrieving products:", err);
+        res.status(500).json({ error: "Internal server error" });
+}
+});
+
 app.post("/write", verifyToken, async (req, res) => {
-    let rnd = Math.floor(Math.random() * 99999999);
+    const rnd = Math.floor(Math.random() * 99999999);
+
+    const { categoryId, productName } = req.body;
+
+    try {
+        const category = await Category.findOne({
+            categoryId: categoryId,
+        });
+
+        if (category) {
+            category.categoryStock += 1;
+            await category.save();
+        }
+
+        let product = new Product({     
+            productId: rnd,
+            productName: productName,
+            categoryId: categoryId,
+        });
+        await product.save();
+    } catch (error) {
+        console.log(error);
+    }
 
     client.publish(topic, "write+" + rnd);
+    res.status(201).json({message: "Product added"})
 });
 
 app.post("/delete", verifyToken, async (req, res) => {
