@@ -40,7 +40,7 @@ const options = {
     password: "aluno23885",
 };
 
-const client = mqtt.connect(MQTT_URL, options);
+/*const client = mqtt.connect(MQTT_URL, options);
 client.on("connect", () => {
     console.log("Connected to MQTT broker");
     client.publish(topic, "finished");
@@ -97,7 +97,7 @@ client.on("message", async (topicName, message) => {
             console.error("Error finding products:", error);
         }
     }
-});
+});*/
 
 const verifyToken = (req, res, next) => {
     const token = req.headers["authorization"];
@@ -192,7 +192,7 @@ app.post("/delete", verifyToken, async (req, res) => {
 
 app.post("/register", async (req, res) => {
     try {
-        const { email, username, password } = req.body;
+        const { email, username, password, role } = req.body;
 
         const existingUser = await User.findOne({ email });
         const existingUsername = await User.findOne({ username });
@@ -201,7 +201,7 @@ app.post("/register", async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, email, hashedPassword });
+        const newUser = new User({ username, email, hashedPassword, role });
 
         await newUser.save();
 
@@ -243,3 +243,27 @@ app.post("/login", async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+app.post("/addCategory", async (req, res) => {
+    const { categoryId, categoryName} = req.body;
+    const baseStock = 0;
+    try{
+        const newCategory = new Category({ categoryId, categoryName, baseStock})
+        await newCategory.save();
+        res.status(201).json({ message: "Category registered successfully" });
+    }catch (error) {
+
+    }
+})
+
+app.post("/getUserRole", async (req, res) => {
+    try {
+        const { userId } = req.body;
+        console.log(userId);
+        const user = await User.findOne({_id:userId});
+        console.log(user.role);
+        res.status(200).json({user})
+    } catch (error) {
+        res.status(500).json({ error: "Internal server error" });
+    }
+})

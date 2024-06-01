@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { page } from "$app/stores";
+    import { jwtDecode } from "jwt-decode";
+    import { json } from "@sveltejs/kit";
     let categories: { categoryName: string; visible: boolean }[] = [];
     let createCategories: Object[] = [];
     let products: any[] = [];
@@ -9,8 +11,12 @@
     const API_URL = "http://localhost:3000/getInventory";
     const WRITE_URL = "http://localhost:3000/write";
     const DELETE_URL = "http://localhost:3000/delete";
+    const CREATE_CATEGORY_URL = "http://localhost:3000/addCategory"
+
+    const ROLE_URL = "http://localhost:3000/getUserRole";
 
     let jwtToken: string;
+    let userRole: boolean;
 
     // Page Index
     let pageIndex = $page.url.searchParams.get("page");
@@ -18,6 +24,10 @@
     // Add product
     let selectedCategory: number | null = null;
     let productName: string = "";
+
+    // Add category
+    let categoryId: string = "";
+    let categoryName: string = "";
 
     async function fetchData() {
         jwtToken = localStorage.getItem("jwtToken");
@@ -34,6 +44,31 @@
         productStock = data;
         getCategories();
     }
+
+    async function fetchRole() {
+        let userId = jwtDecode(jwtToken).userId;
+        console.log(userId);
+
+        const response = await fetch(ROLE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({
+                userId: userId,
+            }),
+        });
+
+        const data = await response.json();
+        userRole = data["user"].role;
+        console.log(userRole);
+    }
+
+    onMount(async () => {
+        jwtToken = localStorage.getItem("jwtToken");
+        await fetchRole();
+    });
 
     async function writeData() {
         const response = await fetch(WRITE_URL, {
@@ -119,6 +154,22 @@
             },
         });
     }
+
+    async function createCategory(){
+        jwtToken = localStorage.getItem("jwtToken");
+        const response = await fetch(CREATE_CATEGORY_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({
+                categoryId: categoryId,
+                categoryName: categoryName
+            })
+        });
+    }
 </script>
 
 <svelte:head>
@@ -151,12 +202,26 @@
         <div
             class="col"
             role="button"
+            title="Adicionar produto"
             on:click={() => {
                 pageIndex = 1;
             }}
         >
             <i class="fa-solid fa-square-plus"></i>
         </div>
+
+        {#if userRole}
+            <div
+                class="col"
+                role="button"
+                title="Adicionar categoria"
+                on:click={() => {
+                    pageIndex = 2;
+                }}
+            >
+                <i class="fa-solid fa-file-circle-plus"></i>
+            </div>
+        {/if}
         <div
             class="col"
             role="button"
@@ -214,11 +279,15 @@
                                             class="row p-2 mx-5 text-center d-flex align-items-center productListing"
                                             style="background-color: var(--color-surface-mixed-200)"
                                         >
-                                            <div class="col d-flex justify-content-center">
+                                            <div
+                                                class="col d-flex justify-content-center"
+                                            >
                                                 {product.substring(0, 8)}
                                             </div>
 
-                                            <div class="col d-flex justify-content-center">
+                                            <div
+                                                class="col d-flex justify-content-center"
+                                            >
                                                 {#each createCategories[1] as prod}
                                                     {#if prod.productId == product.substring(0, 8)}
                                                         {prod.productName}
@@ -289,6 +358,50 @@
                 </div>
             </div>
         {/await}
+    {/if}
+
+    {#if pageIndex == 2}
+    <div class="col mt-3" style="color: var(--color-primary-600);">
+        <div class="row justify-content-center">
+            <div class="col-6">
+                <form on:submit|preventDefault={createCategory}>
+                    <div class="mb-3">
+                        <label for="categoryId" class="form-label"
+                            >Id da categoria</label
+                        >
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="categoryId"
+                            bind:value={categoryId}
+                            required
+                        />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label"
+                            >Nome da categoria</label
+                        >
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="categoryName"
+                            bind:value={categoryName}
+                            required
+                        />
+                    </div>
+                    <div class="text-center">
+                        <button
+                            type="submit"
+                            class="btn btn-dark btn-rounded"
+                            style="background-color: var(--color-primary-200)"
+                            >Adicionar</button
+                        >
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     {/if}
 </div>
 

@@ -4,6 +4,7 @@
     let username: string = "";
     let email: string = "";
     let password: string = "";
+    let role: boolean = false;
 
     async function registerUser(event: Event) {
         event.preventDefault();
@@ -18,6 +19,7 @@
                     email: email,
                     username: username,
                     password: password,
+                    role: role,
                 })
             });
 
@@ -38,6 +40,9 @@
         <input type="text" placeholder="username" bind:value={username} style="margin-bottom: 10px;" />
         <input type="email" placeholder="email" bind:value={email} style="margin-bottom: 10px;" />
         <input type="password" placeholder="password" bind:value={password} style="margin-bottom: 10px;" />
+        <div><input type="checkbox" name="isAdmin" id="isAdmin" bind:checked={role}><label for="isAdmin">Escritório?</label></div>
+
+        
         <button type="submit" style="padding: 5px 20px; border:none; border-radius: 10px; background-color:black; color: white">Register</button>
     </form>
 </div>

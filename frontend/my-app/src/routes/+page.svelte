@@ -1,15 +1,20 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
+    import { jwtDecode } from "jwt-decode";
+    import { json } from "@sveltejs/kit";
 
     const STOCK_URL: string = "/warehousemanager/stock";
     const REGISTER_URL: string = "/warehousemanager/register";
+    const ADD_CATEGORY_URL: string ="/warehouseManager/addCategory"
     const NFC_URL: string = "/warehousemanager/readNFC";
 
     const LOGIN_URL = "http://localhost:3000/login";
+    const ROLE_URL = "http://localhost:3000/getUserRole";
 
     let email: string = "";
     let password: string = "";
+    let userRole: boolean;
 
     let jwtToken: string | null = null;
 
@@ -29,19 +34,41 @@
             });
 
             const data = await response.json();
-            
+
             if (data.token) {
                 localStorage.setItem("jwtToken", data.token);
             }
 
             jwtToken = localStorage.getItem("jwtToken");
+            location.reload();
         } catch (error) {
             console.error("Error user login:", error);
         }
     }
 
-    onMount(() => {
+    async function fetchRole() {
+        let userId = jwtDecode(jwtToken).userId;
+        console.log(userId);
+
+        const response = await fetch(ROLE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify({
+                userId: userId,
+            }),
+        });
+
+        const data = await response.json();
+        userRole = data["user"].role;
+        console.log(userRole);
+    }
+
+    onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
+        await fetchRole();
     });
 </script>
 
@@ -74,38 +101,72 @@
                 <button
                     type="button"
                     class="btn btn-dark btn-rounded ms"
-                    on:click={() => goto(STOCK_URL+"?page=0")}>Ver Stock</button
+                    on:click={() => goto(STOCK_URL + "?page=0")}
+                    >Ver Stock</button
                 >
+
+                {#if userRole}
+                    <button
+                        type="button"
+                        class="btn btn-dark btn-rounded ms-3"
+                        on:click={() => goto(STOCK_URL + "?page=1")}
+                        >Adicionar Produto</button
+                    >
+                    <button
+                        type="button"
+                        class="btn btn-dark btn-rounded ms-3"
+                        on:click={() => goto(STOCK_URL + "?page=2")}
+                        >Adicionar Categoria</button
+                    >
+                    <button
+                        type="button"
+                        class="btn btn-dark btn-rounded ms-3"
+                        on:click={() => goto(REGISTER_URL)}
+                        >Registar Utilizador</button
+                    >
+                    
+                {/if}
+
                 <button
                     type="button"
                     class="btn btn-dark btn-rounded ms-3"
-                    on:click={() => goto(STOCK_URL+"?page=1")}>Adicionar Produto</button
+                    on:click={() => {
+                        localStorage.removeItem("jwtToken");
+                        location.reload();
+                    }}>Logout</button
                 >
-                <button
-                    type="button"
-                    class="btn btn-dark btn-rounded ms-3"
-                    on:click={() => goto(REGISTER_URL)}>Registar Utilizador</button
-                >
-                
             </div>
         </div>
     {:else}
-    <div>
-        <form class="d-flex justify-content-center" on:submit|preventDefault={loginUser}>
-            <input type="email" placeholder="email" bind:value={email} />
-            <br> <!-- Add line break to stack elements -->
-            <input type="password" placeholder="password" bind:value={password} />
-            <br> <!-- Add line break to stack elements -->
-            <button type="submit" style="padding: 5px 20px; border:none; border-radius: 10px; background-color:black; color: white">Login</button>
-        </form>
-    </div>
+        <div>
+            <form
+                class="d-flex justify-content-center"
+                on:submit|preventDefault={loginUser}
+            >
+                <input type="email" placeholder="email" bind:value={email} />
+                <br />
+                <!-- Add line break to stack elements -->
+                <input
+                    type="password"
+                    placeholder="password"
+                    bind:value={password}
+                />
+                <br />
+                <!-- Add line break to stack elements -->
+                <button
+                    type="submit"
+                    style="padding: 5px 20px; border:none; border-radius: 10px; background-color:black; color: white"
+                    >Login</button
+                >
+            </form>
+        </div>
     {/if}
 </div>
 
 <style>
     form {
-    display: flex;
-    flex-direction: column; /* Stack elements vertically */
-    align-items: center; /* Center align items horizontally */
-}
+        display: flex;
+        flex-direction: column; /* Stack elements vertically */
+        align-items: center; /* Center align items horizontally */
+    }
 </style>
