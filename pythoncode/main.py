@@ -3,7 +3,7 @@ import network
 import time
 import utime
 from machine import Pin, ADC
-from umqtt.simple import MQTTClient
+from umqtt import MQTTClient
 
 # LCD
 from machine import I2C, Pin
@@ -57,22 +57,21 @@ if wlan is None:
 print("OK")
 print (wlan)
 
-mqtt_server = '192.168.170.218'
+mqtt_server = 'es1.localto.net'
 client_id = 'teste'
 topic_pub = b'warehouse'
 topic_msg = str(ReadTemperature())
 cb = ""
 
 def mqtt_connect():
-    client = MQTTClient(client_id, mqtt_server, 1883, user="Ruby", password="aluno23885", keepalive=3600)
-    client.set_last_will(topic="warehouse", msg="Desconectado", retain=True, qos=2)
+    client = MQTTClient("aaa", mqtt_server, port=3305)
     client.set_callback(mqtt_callback)
     
     client.connect()
-    client.publish(topic_pub, "finished")
-    client.subscribe(topic_pub)
-    
     print('Connected to %s MQTT Broker' % (mqtt_server))
+    time.sleep(2)
+    client.subscribe(b'warehouse')
+    print('Subbed to %s MQTT Broker' % (mqtt_server))
     return client
 
 def reconnect():
@@ -128,3 +127,4 @@ while True:
     #    client.publish(topic_pub, topic_msg, retain=True)
     #    print("Temperature published:", topic_msg)
     #    last_publish_time = current_time
+
