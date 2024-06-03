@@ -43,7 +43,7 @@
         <div><input type="checkbox" name="isAdmin" id="isAdmin" bind:checked={role}><label for="isAdmin">Escritório?</label></div>
 
         
-        <button type="submit" style="padding: 5px 20px; border:none; border-radius: 10px; background-color:black; color: white">Register</button>
+        <button type="submit" style="padding: 5px 20px; border:none; border-radius: 10px; background-color:#4d008c; color: white">Register</button>
     </form>
 </div>
 

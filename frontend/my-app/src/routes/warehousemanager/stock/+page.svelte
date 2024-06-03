@@ -3,8 +3,9 @@
     import { page } from "$app/stores";
     import { jwtDecode } from "jwt-decode";
     import { json } from "@sveltejs/kit";
+    import { goto } from "$app/navigation";
     let categories: { categoryName: string; visible: boolean }[] = [];
-    let createCategories: Object[] = [];
+    let createCategories: any[] = [];
     let products: any[] = [];
     let productStock: any[] = [];
 
@@ -68,6 +69,7 @@
     onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
         await fetchRole();
+        await fetchCategories();
     });
 
     async function writeData() {
@@ -99,48 +101,24 @@
         });
         const data = await response.json();
         createCategories = data;
-        console.log(createCategories[1]);
-    }
-
-    let uniqueCategoriesList: Object[] = [];
-    function getCategories() {
-        fetchCategories();
-        categories = [];
-        for (const productId in productStock) {
-            if (Object.hasOwnProperty.call(productStock, productId)) {
-                const categoryName = productStock[productId];
-
-                products.push(productId + "+" + categoryName + "");
-
-                if (!categories.includes(categoryName)) {
-                    categories.push({
-                        categoryName: categoryName,
-                        visible: false,
-                    });
-                }
-            }
-        }
-
-        // Create an object to store unique category names as keys
-        let uniqueCategories: Object[] = [];
-
-        // Filter out duplicate entries
-        uniqueCategoriesList = categories.filter((category) => {
-            if (!uniqueCategories[category.categoryName]) {
-                uniqueCategories[category.categoryName] = true;
-                return true;
-            }
-            return false;
+        createCategories[0].forEach((cat) => {
+            cat.visible = true;
         });
+        console.log(createCategories[0]);
     }
 
-    function toggleVisibility(categoryName: string): void {
-        uniqueCategoriesList = uniqueCategoriesList.map((category) => {
-            if (category.categoryName === categoryName) {
+    function toggleVisibility(catName: string): void {
+        console.log(catName);
+
+        // Create a new array to trigger reactivity
+        createCategories[0] = createCategories[0].map((category: any) => {
+            if (category.categoryName === catName) {
                 return { ...category, visible: !category.visible };
             }
-            return category;
+            return category; // Ensure all categories are returned
         });
+        createCategories = [...createCategories]; // Trigger reactivity
+        console.log(createCategories[0]); // For debugging
     }
 
     async function fetchDelete() {
@@ -153,22 +131,10 @@
                 Authorization: `Bearer ${jwtToken}`,
             },
         });
-    }
-
-    async function createCategory() {
-        jwtToken = localStorage.getItem("jwtToken");
-        const response = await fetch(CREATE_CATEGORY_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                Authorization: `Bearer ${jwtToken}`,
-            },
-            body: JSON.stringify({
-                categoryId: categoryId,
-                categoryName: categoryName,
-            }),
-        });
+        window.alert("Continue no dispositivo.");
+        setTimeout(() => {
+            pageIndex = 0;
+        }, 1000);
     }
 </script>
 
@@ -194,65 +160,60 @@
             class="col"
             role="button"
             on:click={() => {
+                goto("/");
+            }}
+        >
+            <i class="fa-solid fa-house"></i>
+        </div>
+
+        <div
+            class="col"
+            role="button"
+            on:click={() => {
                 pageIndex = 0;
             }}
         >
             <i class="fa-solid fa-boxes-stacked"></i>
         </div>
-        <div
-            class="col"
-            role="button"
-            title="Adicionar produto"
-            on:click={() => {
-                pageIndex = 1;
-            }}
-        >
-            <i class="fa-solid fa-square-plus"></i>
-        </div>
 
-        {#if userRole}
+        {#if userRole == false}
             <div
                 class="col"
                 role="button"
-                title="Adicionar categoria"
+                title="Adicionar produto"
                 on:click={() => {
-                    pageIndex = 2;
+                    pageIndex = 1;
                 }}
             >
-                <i class="fa-solid fa-file-circle-plus"></i>
+                <i class="fa-solid fa-square-plus"></i>
+            </div>
+
+            <div
+                class="col"
+                role="button"
+                on:click={() => {
+                    fetchDelete();
+                }}
+            >
+                <i class="fa-solid fa-square-minus"></i>
             </div>
         {/if}
-        <div
-            class="col"
-            role="button"
-            on:click={() => {
-                fetchDelete();
-            }}
-        >
-            <i class="fa-solid fa-square-minus"></i>
-        </div>
     </div>
 
     {#if pageIndex == 0}
         <div class="col mt-3" style="color: var(--color-primary-600);">
-            {#await fetchData() then}
-                {#each uniqueCategoriesList as category}
+            {#if createCategories[0]}
+                {#each createCategories[0] as category}
                     <div class="mb-3">
                         <div
                             class="row p-2 mx-5 rounded-top-3 text-center d-flex align-items-center categoryListing"
                             style="background-color: var(--color-primary-500); color: var(--color-surface-mixed-200); font-weight: bold"
                         >
                             <div class="col">
-                                {category.categoryName.substring(
-                                    0,
-                                    category.categoryName.indexOf("+"),
-                                )}
+                                {category.categoryName}
                             </div>
                             <div class="col">
-                                Stock: {category.categoryName.substring(
-                                    category.categoryName.indexOf("+") + 1,
-                                    category.categoryName.length,
-                                )}
+                                Stock: {category.categoryStock}
                             </div>
                             <div class="col d-flex justify-content-end">
                                 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -270,11 +231,10 @@
                                 </div>
                             </div>
                         </div>
-
                         {#if category.visible}
                             <div class="products">
-                                {#each products as product}
-                                    {#if product.includes(category.categoryName)}
+                                {#each createCategories[1] as product}
+                                    {#if product.categoryId == category.categoryId}
                                         <div
                                             class="row p-2 mx-5 text-center d-flex align-items-center productListing"
                                             style="background-color: var(--color-surface-mixed-200)"
@@ -282,17 +242,13 @@
                                             <div
                                                 class="col d-flex justify-content-center"
                                             >
-                                                {product.substring(0, 8)}
+                                                {product.productId}
                                             </div>
 
                                             <div
                                                 class="col d-flex justify-content-center"
                                             >
-                                                {#each createCategories[1] as prod}
-                                                    {#if prod.productId == product.substring(0, 8)}
-                                                        {prod.productName}
-                                                    {/if}
-                                                {/each}
+                                                {product.productName}
                                             </div>
 
                                             <div class="col d-flex"></div>
@@ -303,11 +259,11 @@
                         {/if}
                     </div>
                 {/each}
-            {/await}
+            {/if}
         </div>
     {/if}
 
-    {#if pageIndex == 1}
+    {#if pageIndex == 1 && userRole == false}
         {#await fetchCategories() then}
             <div class="col mt-3" style="color: var(--color-primary-600);">
                 <div class="row justify-content-center">
@@ -326,10 +282,11 @@
                                 />
                             </div>
                             <div class="mb-3">
+                                <!--
                                 <label for="category" class="form-label"
                                     >Categoria</label
                                 >
-                                <!--
+                                
                                     <select
                                     id="category"
                                     class="form-select"
@@ -361,52 +318,6 @@
                 </div>
             </div>
         {/await}
-    {/if}
-
-    {#if pageIndex == 2}
-        <div class="col mt-3" style="color: var(--color-primary-600);">
-            <div class="row justify-content-center">
-                <div class="col-6">
-                    <form on:submit|preventDefault={createCategory}>
-                        <div class="mb-3">
-                            <label for="categoryId" class="form-label"
-                                >Id da categoria</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="categoryId"
-                                bind:value={categoryId}
-                                maxlength="8"
-                                pattern="\d{8}"
-                                required
-                            />
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="categoryName" class="form-label"
-                                >Nome da categoria</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="categoryName"
-                                bind:value={categoryName}
-                                required
-                            />
-                        </div>
-                        <div class="text-center">
-                            <button
-                                type="submit"
-                                class="btn btn-dark btn-rounded"
-                                style="background-color: var(--color-primary-200)"
-                                >Adicionar</button
-                            >
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     {/if}
 </div>
 
