@@ -11,7 +11,7 @@
     const API_URL = "http://localhost:3000/getInventory";
     const WRITE_URL = "http://localhost:3000/write";
     const DELETE_URL = "http://localhost:3000/delete";
-    const CREATE_CATEGORY_URL = "http://localhost:3000/addCategory"
+    const CREATE_CATEGORY_URL = "http://localhost:3000/addCategory";
 
     const ROLE_URL = "http://localhost:3000/getUserRole";
 
@@ -155,7 +155,7 @@
         });
     }
 
-    async function createCategory(){
+    async function createCategory() {
         jwtToken = localStorage.getItem("jwtToken");
         const response = await fetch(CREATE_CATEGORY_URL, {
             method: "POST",
@@ -166,8 +166,8 @@
             },
             body: JSON.stringify({
                 categoryId: categoryId,
-                categoryName: categoryName
-            })
+                categoryName: categoryName,
+            }),
         });
     }
 </script>
@@ -329,7 +329,8 @@
                                 <label for="category" class="form-label"
                                     >Categoria</label
                                 >
-                                <select
+                                <!--
+                                    <select
                                     id="category"
                                     class="form-select"
                                     bind:value={selectedCategory}
@@ -338,12 +339,14 @@
                                     <option value="" disabled selected
                                         >Selecione uma categoria</option
                                     >
-                                    {#each createCategories as category}
+                                    {#each createCategories[0] as category}                                    
                                         <option value={category.categoryId}
                                             >{category.categoryName}</option
                                         >
+                                        {console.log(category)}
                                     {/each}
                                 </select>
+                                -->
                             </div>
                             <div class="text-center">
                                 <button
@@ -361,47 +364,49 @@
     {/if}
 
     {#if pageIndex == 2}
-    <div class="col mt-3" style="color: var(--color-primary-600);">
-        <div class="row justify-content-center">
-            <div class="col-6">
-                <form on:submit|preventDefault={createCategory}>
-                    <div class="mb-3">
-                        <label for="categoryId" class="form-label"
-                            >Id da categoria</label
-                        >
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="categoryId"
-                            bind:value={categoryId}
-                            required
-                        />
-                    </div>
+        <div class="col mt-3" style="color: var(--color-primary-600);">
+            <div class="row justify-content-center">
+                <div class="col-6">
+                    <form on:submit|preventDefault={createCategory}>
+                        <div class="mb-3">
+                            <label for="categoryId" class="form-label"
+                                >Id da categoria</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="categoryId"
+                                bind:value={categoryId}
+                                maxlength="8"
+                                pattern="\d{8}"
+                                required
+                            />
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="categoryName" class="form-label"
-                            >Nome da categoria</label
-                        >
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="categoryName"
-                            bind:value={categoryName}
-                            required
-                        />
-                    </div>
-                    <div class="text-center">
-                        <button
-                            type="submit"
-                            class="btn btn-dark btn-rounded"
-                            style="background-color: var(--color-primary-200)"
-                            >Adicionar</button
-                        >
-                    </div>
-                </form>
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label"
+                                >Nome da categoria</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="categoryName"
+                                bind:value={categoryName}
+                                required
+                            />
+                        </div>
+                        <div class="text-center">
+                            <button
+                                type="submit"
+                                class="btn btn-dark btn-rounded"
+                                style="background-color: var(--color-primary-200)"
+                                >Adicionar</button
+                            >
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
     {/if}
 </div>
 

@@ -33,14 +33,14 @@ mongoose
 
 import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "ws://192.168.1.81:9001";
+const MQTT_URL = "ws://192.168.170.218:9001";
 const options = {
     connectTimeout: 4000,
     username: "Ruby",
     password: "aluno23885",
 };
 
-/*const client = mqtt.connect(MQTT_URL, options);
+const client = mqtt.connect(MQTT_URL, options);
 client.on("connect", () => {
     console.log("Connected to MQTT broker");
     client.publish(topic, "finished");
@@ -96,12 +96,39 @@ client.on("message", async (topicName, message) => {
         } catch (error) {
             console.error("Error finding products:", error);
         }
+    } else if (msg.includes("++")) {
+        categoryId = msg.substring(0, 8);
+        itemId = msg.substring(10, msg.length + 1);
+
+        try {
+            const category = await Category.findOne({
+                categoryId: categoryId,
+            });
+
+            if (category) {
+                category.categoryStock += 1;
+                await category.save();
+            }
+
+            /*let product = new Product({
+                productId: itemId,
+                categoryId: categoryId,
+            });*/
+
+            let product = await Product.findOne({ productId: itemId });
+            //update product where productId = itemId
+            product.categoryId = categoryId;
+
+            await product.save();
+            client.publish(topic, "finished");
+        } catch (error) {
+            console.log(error);
+        }
     }
-});*/
+});
 
 const verifyToken = (req, res, next) => {
     const token = req.headers["authorization"];
-    console.log(token);
     if (!token) {
         return res.status(401).json({ error: "Token not provided" });
     }
@@ -111,7 +138,6 @@ const verifyToken = (req, res, next) => {
         trimmedToken = token.slice(7, token.length).trimLeft();
     }
 
-    console.log(trimmedToken);
     jwt.verify(trimmedToken, JWT_SECRET, (err, decoded) => {
         if (err) {
             console.error("Error verifying token:", err);
@@ -143,18 +169,18 @@ app.post("/getInventory", verifyToken, async (req, res) => {
 });
 
 app.post("/getCategories", verifyToken, async (req, res) => {
-try {
-    const categories = await Category.find();
-    const products = await Product.find();
+    try {
+        const categories = await Category.find();
+        const products = await Product.find();
 
-    let response = []
-    response.push(categories);
-    response.push(products)
-    res.status(200).json(response)
-} catch (error) {
-    console.error("Error retrieving products:", err);
+        let response = [];
+        response.push(categories);
+        response.push(products);
+        res.status(200).json(response);
+    } catch (error) {
+        console.error("Error retrieving products:", err);
         res.status(500).json({ error: "Internal server error" });
-}
+    }
 });
 
 app.post("/write", verifyToken, async (req, res) => {
@@ -172,7 +198,7 @@ app.post("/write", verifyToken, async (req, res) => {
             await category.save();
         }
 
-        let product = new Product({     
+        let product = new Product({
             productId: rnd,
             productName: productName,
             categoryId: categoryId,
@@ -183,7 +209,7 @@ app.post("/write", verifyToken, async (req, res) => {
     }
 
     client.publish(topic, "write+" + rnd);
-    res.status(201).json({message: "Product added"})
+    res.status(201).json({ message: "Product added" });
 });
 
 app.post("/delete", verifyToken, async (req, res) => {
@@ -245,25 +271,25 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/addCategory", async (req, res) => {
-    const { categoryId, categoryName} = req.body;
+    const { categoryId, categoryName } = req.body;
     const baseStock = 0;
-    try{
-        const newCategory = new Category({ categoryId, categoryName, baseStock})
+    try {
+        const newCategory = new Category({
+            categoryId,
+            categoryName,
+            baseStock,
+        });
         await newCategory.save();
         res.status(201).json({ message: "Category registered successfully" });
-    }catch (error) {
-
-    }
-})
+    } catch (error) {}
+});
 
 app.post("/getUserRole", async (req, res) => {
     try {
         const { userId } = req.body;
-        console.log(userId);
-        const user = await User.findOne({_id:userId});
-        console.log(user.role);
-        res.status(200).json({user})
+        const user = await User.findOne({ _id: userId });
+        res.status(200).json({ user });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
-})
+});

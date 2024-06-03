@@ -57,15 +57,15 @@ if wlan is None:
 print("OK")
 print (wlan)
 
-mqtt_server = '0.tcp.eu.ngrok.io'
+mqtt_server = '192.168.170.218'
 client_id = 'teste'
 topic_pub = b'warehouse'
 topic_msg = str(ReadTemperature())
 cb = ""
 
 def mqtt_connect():
-    client = MQTTClient(client_id, mqtt_server, 11593, user="xyrsto", password="olamundo", keepalive=3600)
-    client.set_last_will(topic="test", msg="Desconectado", retain=True, qos=2)
+    client = MQTTClient(client_id, mqtt_server, 1883, user="Ruby", password="aluno23885", keepalive=3600)
+    client.set_last_will(topic="warehouse", msg="Desconectado", retain=True, qos=2)
     client.set_callback(mqtt_callback)
     
     client.connect()
@@ -90,8 +90,9 @@ def mqtt_callback(topic, msg):
     print(msg.decode("utf-8"))
     if("write" in msg.decode("utf-8")):
         write_to_lcd("Read product ID card")
-        #write_rfid_card("11111111", 1, 1)
+        #write_rfid_card("22222222", 1, 1)
         product_id = read_rfid_card()
+        write_to_lcd("Waiting...")
         print(product_id)
         time.sleep(3)
         write_to_lcd("Get item card closer");
@@ -104,6 +105,8 @@ def mqtt_callback(topic, msg):
         write_to_lcd("Read item card")
         item_id = read_rfid_card()
         client.publish(topic_pub, "remove" + "++" + str(item_id))
+        write_to_lcd("Successful")
+
         
     
     
