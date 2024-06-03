@@ -89,13 +89,13 @@ def mqtt_callback(topic, msg):
     print("Received MQTT message on topic: {}, message: {}".format(topic, msg))
     print(msg.decode("utf-8"))
     if("write" in msg.decode("utf-8")):
-        write_to_lcd("Read product ID card")
-        #write_rfid_card("22222222", 1, 1)
+        write_to_lcd("Read category ID card")
+        #write_rfid_card("33333333", 1, 1)
         product_id = read_rfid_card()
         write_to_lcd("Waiting...")
         print(product_id)
         time.sleep(3)
-        write_to_lcd("Get item card closer");
+        write_to_lcd("Get product card closer");
         item_id = msg.replace(b"write", b"").replace(b'"', b'')
         write_rfid_card(msg.replace(b"write", b"").replace(b'"', b''), 1,1)
         write_to_lcd("Successful")
