@@ -102,7 +102,7 @@
         const data = await response.json();
         createCategories = data;
         createCategories[0].forEach((cat) => {
-            cat.visible = true;
+            cat.visible = false;
         });
         console.log(createCategories[0]);
     }

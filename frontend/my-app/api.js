@@ -33,11 +33,11 @@ mongoose
 
 import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "ws://192.168.170.218:9001";
+const MQTT_URL = "tcp://es1.localto.net:7184";
 const options = {
     connectTimeout: 4000,
     username: "Ruby",
-    password: "aluno23885",
+    password: "ola",
 };
 
 const client = mqtt.connect(MQTT_URL, options);
