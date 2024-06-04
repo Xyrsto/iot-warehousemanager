@@ -3,7 +3,7 @@ import network
 import time
 import utime
 from machine import Pin, ADC
-from umqtt import MQTTClient
+from umqtt.simple import MQTTClient
 
 # LCD
 from machine import I2C, Pin
@@ -57,19 +57,18 @@ if wlan is None:
 print("OK")
 print (wlan)
 
-mqtt_server = 'es1.localto.net'
+mqtt_server = '6.tcp.eu.ngrok.io'
 client_id = 'teste'
 topic_pub = b'warehouse'
 topic_msg = str(ReadTemperature())
 cb = ""
 
 def mqtt_connect():
-    client = MQTTClient("aaa", mqtt_server, port=3305)
+    client = MQTTClient("aaa", mqtt_server, port=16061)
     client.set_callback(mqtt_callback)
     
     client.connect()
     print('Connected to %s MQTT Broker' % (mqtt_server))
-    time.sleep(2)
     client.subscribe(b'warehouse')
     print('Subbed to %s MQTT Broker' % (mqtt_server))
     return client
@@ -89,7 +88,7 @@ def mqtt_callback(topic, msg):
     print(msg.decode("utf-8"))
     if("write" in msg.decode("utf-8")):
         write_to_lcd("Read category ID card")
-        #write_rfid_card("33333333", 1, 1)
+        #write_rfid_card("22222222", 1, 1)
         product_id = read_rfid_card()
         write_to_lcd("Waiting...")
         print(product_id)
@@ -115,16 +114,25 @@ def mqtt_callback(topic, msg):
 client = mqtt_connect()
 last_publish_time = 0
 publish_interval = 3
+ledState = "off"
    
-
 while True:
-    client.check_msg()	
+    client.check_msg()
+    
+    current_time = time.time()
+   
+    if current_time - last_publish_time >= publish_interval:
+        temperature = ReadTemperature()
         
-    #current_time = time.time()
-    #if current_time - last_publish_time >= publish_interval:
-    #    temperature = ReadTemperature()
-    #    topic_msg = str(temperature)
-    #    client.publish(topic_pub, topic_msg, retain=True)
-    #    print("Temperature published:", topic_msg)
-    #    last_publish_time = current_time
+        if temperature>20:
+            led_pin.high()
+            ledState = "On"
+        else:
+            led_pin.low()
+            ledState = "Off"
+        
+        topic_msg = str(temperature)
+        client.publish("temperatura", topic_msg+ledState, retain=False)
+        print("Temperature published:", topic_msg)
+        last_publish_time = current_time
 
