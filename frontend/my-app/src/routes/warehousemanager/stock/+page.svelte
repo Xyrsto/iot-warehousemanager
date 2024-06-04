@@ -2,19 +2,12 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { jwtDecode } from "jwt-decode";
-    import { json } from "@sveltejs/kit";
     import { goto } from "$app/navigation";
-    let categories: { categoryName: string; visible: boolean }[] = [];
-    let createCategories: any[] = [];
-    let products: any[] = [];
-    let productStock: any[] = [];
 
     const urlAPI = localStorage.getItem("URL_API");
-    const API_URL = urlAPI + "/getInventory";
     const WRITE_URL = urlAPI + "/write";
     const DELETE_URL = urlAPI + "/delete";
     const GETCATEGORY_URL = urlAPI + "/getCategories";
-    const CREATE_CATEGORY_URL = urlAPI + "/addCategory";
     const TEMP_URL = urlAPI + "/getTemperature";
 
     const ROLE_URL = urlAPI + "/getUserRole";
@@ -22,16 +15,16 @@
     let jwtToken: string;
     let userRole: boolean;
 
+    // categories[0] = Categorias
+    // categories[1] = Produtos
+    let categories: any[] = [];
+
     // Page Index
     let pageIndex = $page.url.searchParams.get("page");
 
     // Add product
     let selectedCategory: number | null = null;
     let productName: string = "";
-
-    // Add category
-    let categoryId: string = "";
-    let categoryName: string = "";
 
     // Temperature
     let temp: string = "";
@@ -52,23 +45,6 @@
         const data = await response.json();
         temp = data.substring(0, 3);
         ledState = data.substring(4, data.length);
-    }
-
-    async function fetchData() {
-        jwtToken = localStorage.getItem("jwtToken");
-
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                "ngrok-skip-browser-warning": "69420",
-                Authorization: `Bearer ${jwtToken}`,
-            },
-        });
-        const data = await response.json();
-        productStock = data;
-        getCategories();
     }
 
     async function fetchRole() {
@@ -127,20 +103,21 @@
             },
         });
         const data = await response.json();
-        createCategories = data;
-        createCategories[0].forEach((cat) => {
+        categories = data;
+
+        categories[0].forEach((cat) => {
             cat.visible = false;
         });
     }
 
     function toggleVisibility(catName: string): void {
-        createCategories[0] = createCategories[0].map((category: any) => {
+        categories[0] = categories[0].map((category: any) => {
             if (category.categoryName === catName) {
                 return { ...category, visible: !category.visible };
             }
             return category;
         });
-        createCategories = [...createCategories]; 
+        categories = [...categories];
     }
 
     async function fetchDelete() {
@@ -157,6 +134,7 @@
 
         setTimeout(() => {
             pageIndex = 0;
+            fetchCategories();
         }, 1000);
     }
 </script>
@@ -236,8 +214,8 @@
 
     {#if pageIndex == 0}
         <div class="col mt-3" style="color: var(--color-primary-600);">
-            {#if createCategories[0]}
-                {#each createCategories[0] as category}
+            {#if categories[0]}
+                {#each categories[0] as category}
                     <div class="mb-3">
                         <div
                             class="row p-2 mx-5 rounded-top-3 text-center d-flex align-items-center categoryListing"
@@ -267,7 +245,7 @@
                         </div>
                         {#if category.visible}
                             <div class="products">
-                                {#each createCategories[1] as product}
+                                {#each categories[1] as product}
                                     {#if product.categoryId == category.categoryId}
                                         <div
                                             class="row p-2 mx-5 text-center d-flex align-items-center productListing"
@@ -298,37 +276,35 @@
     {/if}
 
     {#if pageIndex == 1 && userRole == false}
-        {#await fetchCategories() then}
-            <div class="col mt-3" style="color: var(--color-primary-600);">
-                <div class="row justify-content-center">
-                    <div class="col-6">
-                        <form on:submit|preventDefault={writeData}>
-                            <div class="mb-3">
-                                <label for="productName" class="form-label"
-                                    >Nome do produto</label
-                                >
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="productName"
-                                    bind:value={productName}
-                                    required
-                                />
-                            </div>
+        <div class="col mt-3" style="color: var(--color-primary-600);">
+            <div class="row justify-content-center">
+                <div class="col-6">
+                    <form on:submit|preventDefault={writeData}>
+                        <div class="mb-3">
+                            <label for="productName" class="form-label"
+                                >Nome do produto</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="productName"
+                                bind:value={productName}
+                                required
+                            />
+                        </div>
 
-                            <div class="text-center">
-                                <button
-                                    type="submit"
-                                    class="btn btn-dark btn-rounded"
-                                    style="background-color: var(--color-primary-200)"
-                                    >Adicionar</button
-                                >
-                            </div>
-                        </form>
-                    </div>
+                        <div class="text-center">
+                            <button
+                                type="submit"
+                                class="btn btn-dark btn-rounded"
+                                style="background-color: var(--color-primary-200)"
+                                >Adicionar</button
+                            >
+                        </div>
+                    </form>
                 </div>
             </div>
-        {/await}
+        </div>
     {/if}
 </div>
 

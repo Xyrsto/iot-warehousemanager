@@ -7,9 +7,7 @@
     const urlAPI="https://b7d5-2001-818-df87-2800-fcb7-e48b-fbd3-68f3.ngrok-free.app"
     const STOCK_URL: string = "/warehousemanager/stock";
     const REGISTER_URL: string = "/warehousemanager/register";
-    const ADD_CATEGORY_URL: string = "/warehouseManager/addCategory";
     const DELETE_URL = urlAPI+"/delete";
-    const NFC_URL: string = "/warehousemanager/readNFC";
 
     const LOGIN_URL = urlAPI+"/login";
     const ROLE_URL = urlAPI+"/getUserRole";
@@ -42,7 +40,7 @@
             }
 
             jwtToken = localStorage.getItem("jwtToken");
-            location.reload();
+            //location.reload();
         } catch (error) {
             console.error("Error user login:", error);
         }
@@ -150,7 +148,7 @@
             </div>
         </div>
     {:else}
-        <div>
+        <div class="mt-5">
             <form
                 class="d-flex justify-content-center"
                 on:submit|preventDefault={loginUser}
