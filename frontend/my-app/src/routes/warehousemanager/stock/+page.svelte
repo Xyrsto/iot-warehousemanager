@@ -9,12 +9,15 @@
     let products: any[] = [];
     let productStock: any[] = [];
 
-    const API_URL = "http://localhost:3000/getInventory";
-    const WRITE_URL = "http://localhost:3000/write";
-    const DELETE_URL = "http://localhost:3000/delete";
-    const CREATE_CATEGORY_URL = "http://localhost:3000/addCategory";
+    const urlAPI = localStorage.getItem("URL_API");
+    const API_URL = urlAPI + "/getInventory";
+    const WRITE_URL = urlAPI + "/write";
+    const DELETE_URL = urlAPI + "/delete";
+    const GETCATEGORY_URL = urlAPI + "/getCategories";
+    const CREATE_CATEGORY_URL = urlAPI + "/addCategory";
+    const TEMP_URL = urlAPI + "/getTemperature";
 
-    const ROLE_URL = "http://localhost:3000/getUserRole";
+    const ROLE_URL = urlAPI + "/getUserRole";
 
     let jwtToken: string;
     let userRole: boolean;
@@ -30,6 +33,27 @@
     let categoryId: string = "";
     let categoryName: string = "";
 
+    // Temperature
+    let temp: string = "";
+    let ledState: string = "";
+
+    async function fetchTemperature() {
+        jwtToken = localStorage.getItem("jwtToken");
+
+        const response = await fetch(TEMP_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "ngrok-skip-browser-warning": "69420",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+        });
+        const data = await response.json();
+        temp = data.substring(0, 3);
+        ledState = data.substring(4, data.length);
+    }
+
     async function fetchData() {
         jwtToken = localStorage.getItem("jwtToken");
 
@@ -38,6 +62,7 @@
             headers: {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
+                "ngrok-skip-browser-warning": "69420",
                 Authorization: `Bearer ${jwtToken}`,
             },
         });
@@ -48,7 +73,6 @@
 
     async function fetchRole() {
         let userId = jwtDecode(jwtToken).userId;
-        console.log(userId);
 
         const response = await fetch(ROLE_URL, {
             method: "POST",
@@ -63,13 +87,16 @@
 
         const data = await response.json();
         userRole = data["user"].role;
-        console.log(userRole);
     }
 
     onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
         await fetchRole();
         await fetchCategories();
+
+        setInterval(() => {
+            fetchTemperature();
+        }, 3000);
     });
 
     async function writeData() {
@@ -91,7 +118,7 @@
 
     async function fetchCategories() {
         jwtToken = localStorage.getItem("jwtToken");
-        const response = await fetch("http://localhost:3000/getCategories", {
+        const response = await fetch(GETCATEGORY_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -104,25 +131,21 @@
         createCategories[0].forEach((cat) => {
             cat.visible = false;
         });
-        console.log(createCategories[0]);
     }
 
     function toggleVisibility(catName: string): void {
-        console.log(catName);
-
-        // Create a new array to trigger reactivity
         createCategories[0] = createCategories[0].map((category: any) => {
             if (category.categoryName === catName) {
                 return { ...category, visible: !category.visible };
             }
-            return category; // Ensure all categories are returned
+            return category;
         });
-        createCategories = [...createCategories]; // Trigger reactivity
-        console.log(createCategories[0]); // For debugging
+        createCategories = [...createCategories]; 
     }
 
     async function fetchDelete() {
         jwtToken = localStorage.getItem("jwtToken");
+        window.alert("Continue no dispositivo.");
         const response = await fetch(DELETE_URL, {
             method: "POST",
             headers: {
@@ -131,7 +154,7 @@
                 Authorization: `Bearer ${jwtToken}`,
             },
         });
-        window.alert("Continue no dispositivo.");
+
         setTimeout(() => {
             pageIndex = 0;
         }, 1000);
@@ -171,6 +194,7 @@
             role="button"
             on:click={() => {
                 pageIndex = 0;
+                fetchCategories();
             }}
         >
             <i class="fa-solid fa-boxes-stacked"></i>
@@ -196,6 +220,16 @@
                 }}
             >
                 <i class="fa-solid fa-square-minus"></i>
+            </div>
+        {/if}
+
+        {#if temp}
+            <div class="col">
+                Temperatura armazém: {temp}ºC
+            </div>
+
+            <div class="col">
+                Led: {ledState}
             </div>
         {/if}
     </div>
@@ -281,30 +315,7 @@
                                     required
                                 />
                             </div>
-                            <div class="mb-3">
-                                <!--
-                                <label for="category" class="form-label"
-                                    >Categoria</label
-                                >
-                                
-                                    <select
-                                    id="category"
-                                    class="form-select"
-                                    bind:value={selectedCategory}
-                                    required
-                                >
-                                    <option value="" disabled selected
-                                        >Selecione uma categoria</option
-                                    >
-                                    {#each createCategories[0] as category}                                    
-                                        <option value={category.categoryId}
-                                            >{category.categoryName}</option
-                                        >
-                                        {console.log(category)}
-                                    {/each}
-                                </select>
-                                -->
-                            </div>
+
                             <div class="text-center">
                                 <button
                                     type="submit"

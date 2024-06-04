@@ -4,14 +4,15 @@
     import { jwtDecode } from "jwt-decode";
     import { json } from "@sveltejs/kit";
 
+    const urlAPI="https://b7d5-2001-818-df87-2800-fcb7-e48b-fbd3-68f3.ngrok-free.app"
     const STOCK_URL: string = "/warehousemanager/stock";
     const REGISTER_URL: string = "/warehousemanager/register";
     const ADD_CATEGORY_URL: string = "/warehouseManager/addCategory";
-    const DELETE_URL = "http://localhost:3000/delete";
+    const DELETE_URL = urlAPI+"/delete";
     const NFC_URL: string = "/warehousemanager/readNFC";
 
-    const LOGIN_URL = "http://localhost:3000/login";
-    const ROLE_URL = "http://localhost:3000/getUserRole";
+    const LOGIN_URL = urlAPI+"/login";
+    const ROLE_URL = urlAPI+"/getUserRole";
 
     let email: string = "";
     let password: string = "";
@@ -49,7 +50,6 @@
 
     async function fetchRole() {
         let userId = jwtDecode(jwtToken).userId;
-        console.log(userId);
 
         const response = await fetch(ROLE_URL, {
             method: "POST",
@@ -64,11 +64,11 @@
 
         const data = await response.json();
         userRole = data["user"].role;
-        console.log(userRole);
     }
 
     onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
+        localStorage.setItem("URL_API", urlAPI);
         await fetchRole();
     });
 </script>

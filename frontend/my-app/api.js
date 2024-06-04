@@ -7,10 +7,16 @@ import { Category } from "./Models/category.js";
 import { User } from "./Models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mqtt from "mqtt";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use((req, res, next) => {
+    res.setHeader("ngrok-skip-browser-warning", "true");
+    res.setHeader("User-Agent", "CustomUserAgent/1.0");
+    next();
+});
 
 dotenv.config();
 
@@ -31,13 +37,10 @@ mongoose
         console.error("Error connecting to database:", err);
     });
 
-import mqtt from "mqtt";
 let topic = "warehouse";
-const MQTT_URL = "tcp://es1.localto.net:7184";
+const MQTT_URL = "mqtt://6.tcp.eu.ngrok.io:16061";
 const options = {
     connectTimeout: 4000,
-    username: "Ruby",
-    password: "ola",
 };
 
 const client = mqtt.connect(MQTT_URL, options);
@@ -45,6 +48,7 @@ client.on("connect", () => {
     console.log("Connected to MQTT broker");
     client.publish(topic, "finished");
     client.subscribe(topic);
+    client.subscribe("temperatura");
 });
 
 client.on("error", (error) => {
@@ -53,9 +57,15 @@ client.on("error", (error) => {
 
 let categoryId;
 let itemId;
+let temperatura;
 
 client.on("message", async (topicName, message) => {
     let msg = message.toString();
+
+    if (topicName == "temperatura") {
+        temperatura = message.toString();
+    }
+
     if (msg.includes("remove")) {
         itemId = msg.substring(9, msg.length + 1);
         try {
@@ -166,6 +176,10 @@ app.post("/getInventory", verifyToken, async (req, res) => {
         console.error("Error retrieving products:", err);
         res.status(500).json({ error: "Internal server error" });
     }
+});
+
+app.post("/getTemperature", verifyToken, async (req, res) => {
+    res.status(200).json(temperatura);
 });
 
 app.post("/getCategories", verifyToken, async (req, res) => {
