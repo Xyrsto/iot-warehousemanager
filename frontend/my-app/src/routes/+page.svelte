@@ -2,25 +2,23 @@
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import { jwtDecode } from "jwt-decode";
-    import { json } from "@sveltejs/kit";
 
-    const urlAPI="https://b7d5-2001-818-df87-2800-fcb7-e48b-fbd3-68f3.ngrok-free.app"
+    const urlAPI = "http://localhost:3000";
     const STOCK_URL: string = "/warehousemanager/stock";
     const REGISTER_URL: string = "/warehousemanager/register";
-    const DELETE_URL = urlAPI+"/delete";
-
-    const LOGIN_URL = urlAPI+"/login";
-    const ROLE_URL = urlAPI+"/getUserRole";
+    const DELETE_URL = urlAPI + "/delete";
+    const LOGIN_URL = urlAPI + "/login";
+    const ROLE_URL = urlAPI + "/getUserRole";
 
     let email: string = "";
     let password: string = "";
-    let userRole: boolean;
+    let userRole: boolean = false;
 
     let jwtToken: string | null = null;
 
     async function loginUser(event: Event) {
         event.preventDefault();
-
+        console.log(LOGIN_URL);
         try {
             const response = await fetch(LOGIN_URL, {
                 method: "POST",
@@ -37,16 +35,17 @@
 
             if (data.token) {
                 localStorage.setItem("jwtToken", data.token);
+                jwtToken = data.token;
+                await fetchRole(); 
             }
-
-            jwtToken = localStorage.getItem("jwtToken");
-            //location.reload();
         } catch (error) {
             console.error("Error user login:", error);
         }
     }
 
     async function fetchRole() {
+        if (!jwtToken) return;
+
         let userId = jwtDecode(jwtToken).userId;
 
         const response = await fetch(ROLE_URL, {
@@ -61,13 +60,15 @@
         });
 
         const data = await response.json();
-        userRole = data["user"].role;
+        userRole = data["user"].role; 
     }
 
     onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
+        if (jwtToken) {
+            await fetchRole();
+        }
         localStorage.setItem("URL_API", urlAPI);
-        await fetchRole();
     });
 </script>
 
@@ -89,7 +90,10 @@
 
 <div class="overflow-hidden" style="height:100vh; width: 100vw">
     <div class="row justify-content-center align-items-center">
-        <div class="col text-center py-3" style="color: #b391cc; background-color: #2e2832 !important;">
+        <div
+            class="col text-center py-3"
+            style="color: #b391cc; background-color: #2e2832 !important;"
+        >
             <h1>Warehouse Manager</h1>
         </div>
     </div>
@@ -121,7 +125,7 @@
                             goto(DELETE_URL);
                             window.alert("Continue no dispositivo.");
                             setTimeout(() => {
-                                goto(STOCK_URL + "?page=0")
+                                goto(STOCK_URL + "?page=0");
                             }, 1000);
                         }}>Remover Produto</button
                     >

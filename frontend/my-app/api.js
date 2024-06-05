@@ -38,7 +38,7 @@ mongoose
     });
 
 let topic = "warehouse";
-const MQTT_URL = "mqtt://6.tcp.eu.ngrok.io:16061";
+const MQTT_URL = "mqtt://0.tcp.eu.ngrok.io:16244";
 const options = {
     connectTimeout: 4000,
 };

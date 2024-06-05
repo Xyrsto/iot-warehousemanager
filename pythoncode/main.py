@@ -106,11 +106,6 @@ def mqtt_callback(topic, msg):
         write_to_lcd("Successful")
 
         
-    
-    
-            
-        
-    # Print the MQTT message on the LCD
 client = mqtt_connect()
 last_publish_time = 0
 publish_interval = 3
