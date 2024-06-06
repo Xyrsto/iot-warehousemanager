@@ -63,6 +63,19 @@
         userRole = data["user"].role; 
     }
 
+    async function fetchDelete() {
+        jwtToken = localStorage.getItem("jwtToken");
+        window.alert("Continue no dispositivo.");
+        const response = await fetch(DELETE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+        });
+    }
+
     onMount(async () => {
         jwtToken = localStorage.getItem("jwtToken");
         if (jwtToken) {
@@ -121,9 +134,9 @@
                         type="button"
                         class="btn btn-dark btn-rounded ms-3"
                         style="background-color: var(--color-primary-300)"
-                        on:click={() => {
-                            goto(DELETE_URL);
-                            window.alert("Continue no dispositivo.");
+                        on:click={() => { fetchDelete();
+                            
+                        window.alert("Continue no dispositivo.");
                             setTimeout(() => {
                                 goto(STOCK_URL + "?page=0");
                             }, 1000);
